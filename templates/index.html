@@ -63,45 +63,53 @@
                  onerror="this.src='https://via.placeholder.com/250x150?text=No+Image'">
             
             <div class="card-content">
-                <h2>{{ mod[1] | escape }}</h2>
-                
-                <!-- Теги и плюсик в одной строке -->
-                <div class="assigned-tags">
-                    {% set mod_tags = tags_for_mod[mod[0]] %}
-                    {% if mod_tags %}
-                        {% for tag in mod_tags %}
-                        <div class="assigned-tag-container">
-                            <span class="assigned-tag" onclick="filterByTag({{ tag[0] }})">
-                                {{ tag[1] }}
-                                <span class="assigned-tag-delete" onclick="removeTagFromMod(event, {{ mod[0] }}, {{ tag[0] }})">×</span>
-                            </span>
-                        </div>
-                        {% endfor %}
-                    {% endif %}
+                <!-- Верхняя часть (заголовок и теги) -->
+                <div class="content-top">
+                    <h2>{{ mod[1] | escape }}</h2>
                     
-                    <!-- Плюсик в стиле тега -->
-                    <button class="tag-plus-btn" onclick="toggleTagDropdown(this)">+</button>
-                    <div class="tag-dropdown">
-                        {% for tag in all_tags %}
-                        <button type="button" class="tag-item" 
-                                onclick="addTagToMod(event, {{ mod[0] }}, {{ tag[0] }})">
-                            {{ tag[1] }}
-                        </button>
-                        {% endfor %}
-                    </div>
+                    
+                    
+                    
                 </div>
                 
-                <p class="meta">
-                    <span>📅 {{ mod[4] | escape }}</span>
-                    <span>⬇️ {{ mod[5] | escape }}</span>
-                </p>
-                <a href="{{ mod[3] | escape }}" target="_blank" class="card-link">Открыть на Sims-Market</a>
-                
-                <!-- Кнопка удаления внизу -->
-                <form action="/delete/{{ mod[0] }}" method="POST" class="delete-form" 
-                      onsubmit="return confirm('Удалить мод &quot;{{ mod[1] | escape }}&quot;?')">
-                    <button type="submit" class="delete-btn">🗑 Удалить</button>
-                </form>
+                <!-- Нижняя часть (ссылки и кнопки) -->
+                <div class="content-bottom">
+                    <!-- Теги и плюсик в одной строке -->
+                    <div class="assigned-tags">
+                        {% set mod_tags = tags_for_mod[mod[0]] %}
+                        {% if mod_tags %}
+                            {% for tag in mod_tags %}
+                            <div class="assigned-tag-container">
+                                <span class="assigned-tag" onclick="filterByTag({{ tag[0] }})">
+                                    {{ tag[1] }}
+                                    <span class="assigned-tag-delete" onclick="removeTagFromMod(event, {{ mod[0] }}, {{ tag[0] }})">×</span>
+                                </span>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Плюсик в стиле тега -->
+                        <button class="tag-plus-btn" onclick="toggleTagDropdown(this)">+</button>
+                        <div class="tag-dropdown">
+                            {% for tag in all_tags %}
+                            <button type="button" class="tag-item" 
+                                    onclick="addTagToMod(event, {{ mod[0] }}, {{ tag[0] }})">
+                                {{ tag[1] }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <p class="meta">
+                        <span>📅 {{ mod[4] | escape }}</span>
+                        <span>⬇️ {{ mod[5] | escape }}</span>
+                    </p>
+                    <a href="{{ mod[3] | escape }}" target="_blank" class="card-link">Открыть на Sims-Market</a>
+                    
+                    <form action="/delete/{{ mod[0] }}" method="POST" class="delete-form" 
+                        onsubmit="return confirm('Удалить мод &quot;{{ mod[1] | escape }}&quot;?')">
+                        <button type="submit" class="delete-btn">🗑 Удалить</button>
+                    </form>
+                </div>
             </div>
         </div>
         {% else %}
