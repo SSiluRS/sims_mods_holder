@@ -26,8 +26,8 @@ def index():
                          mods=mods, 
                          all_tags=all_tags, 
                          tags_for_mod=tags_for_mod,
-                         current_filter_tag=None,  # Нет активного фильтра
-                         current_filter_name=None)
+                         current_filter_tags=None,
+                         current_filter_names=None)
 
 @app.route('/add', methods=['POST'])
 def add_mod_route():
@@ -166,22 +166,46 @@ def remove_tag_from_mod_route(mod_id, tag_id):
 
 @app.route('/filter_by_tag/<int:tag_id>')
 def filter_by_tag(tag_id):
+    # Получаем текущие фильтры из URL
+    current_tag_ids = request.args.getlist('tag_ids')
+    current_tag_ids = [int(tag_id) for tag_id in current_tag_ids if tag_id.isdigit()]
+    
+    # Добавляем новый тег к текущим
+    if tag_id not in current_tag_ids:
+        current_tag_ids.append(tag_id)
+    
+    # Перенаправляем на маршрут фильтрации по нескольким тегам
+    from flask import url_for
+    params = '&'.join([f'tag_ids={tid}' for tid in current_tag_ids])
+    return redirect(f'/filter_by_tags?{params}')
+
+@app.route('/filter_by_tags')
+def filter_by_tags():
+    # Получаем список тегов из GET-параметра
+    tag_ids = request.args.getlist('tag_ids')
+    tag_ids = [int(tag_id) for tag_id in tag_ids if tag_id.isdigit()]
+    
+    if not tag_ids:
+        return redirect('/')
+    
     # Получаем все моды и теги
     all_mods = get_all_mods()
     all_tags = get_all_tags()
     
-    # Получаем моды, которые имеют указанный тег
+    # Фильтруем моды, которые имеют ВСЕ указанные теги
     filtered_mods = []
     for mod in all_mods:
         mod_tags = get_tags_for_mod(mod[0])
-        # Проверяем, есть ли у мода указанный тег
-        if any(tag[0] == tag_id for tag in mod_tags):
+        mod_tag_ids = [tag[0] for tag in mod_tags]
+        
+        # Проверяем, есть ли у мода ВСЕ указанные теги
+        if all(tag_id in mod_tag_ids for tag_id in tag_ids):
             filtered_mods.append(mod)
     
-    # Получаем имя тега для отображения
-    tag_name = next((tag[1] for tag in all_tags if tag[0] == tag_id), "Неизвестный тег")
+    # Получаем имена тегов для отображения
+    selected_tags = [(tag[0], tag[1]) for tag in all_tags if tag[0] in tag_ids]
     
-    # Подготавливаем теги для каждого мода (как в обычном маршруте)
+    # Подготавливаем теги для каждого мода
     tags_for_mod = {}
     for mod in filtered_mods:
         tags_for_mod[mod[0]] = get_tags_for_mod(mod[0])
@@ -190,8 +214,8 @@ def filter_by_tag(tag_id):
                          mods=filtered_mods,
                          all_tags=all_tags,
                          tags_for_mod=tags_for_mod,
-                         current_filter_tag=tag_id,
-                         current_filter_name=tag_name)
+                         current_filter_tags=tag_ids,
+                         current_filter_names=selected_tags)
 
 if __name__ == '__main__':
     init_db()

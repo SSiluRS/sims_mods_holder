@@ -20,9 +20,13 @@
     </header>
 
     <!-- Отображение активного фильтра -->
-    {% if current_filter_tag %}
+    {% if current_filter_tags %}
     <div class="filter-indicator">
-        <span class="filter-text">Фильтр: {{ current_filter_name }}</span>
+        <span class="filter-text">Фильтр: 
+            {% for tag_id, tag_name in current_filter_names %}
+                {{ tag_name }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </span>
         <a href="/" class="filter-clear-btn">×</a>
     </div>
     {% endif %}
@@ -102,8 +106,8 @@
         </div>
         {% else %}
         <p class="empty">
-            {% if current_filter_tag %}
-                Нет модов с тегом "{{ current_filter_name }}". 
+            {% if current_filter_tags %}
+                Нет модов с выбранными тегами. 
                 <a href="/">Показать все</a>
             {% else %}
                 Нет добавленных модов. Добавьте первый!
@@ -163,44 +167,70 @@
         });
     });
 
-    // Функция для фильтрации по тегу
     function filterByTag(tagId) {
-        window.location.href = '/filter_by_tag/' + tagId;
+        // Получаем текущие активные фильтры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentFilters = urlParams.getAll('tag_ids');
+        
+        // Проверяем, есть ли тег в текущих фильтрах
+        if (currentFilters.includes(tagId.toString())) {
+            // Если есть, удаляем его
+            const newFilters = currentFilters.filter(id => id !== tagId.toString());
+            redirectToFilter(newFilters);
+        } else {
+            // Если нет, добавляем к текущим фильтрам
+            if (!currentFilters.includes(tagId.toString())) {
+                currentFilters.push(tagId.toString());
+            }
+            redirectToFilter(currentFilters);
+        }
+    }
+
+    function redirectToFilter(tagIds) {
+        if (tagIds.length === 0) {
+            window.location.href = '/';
+        } else {
+            const params = new URLSearchParams();
+            tagIds.forEach(tagId => params.append('tag_ids', tagId));
+            window.location.href = `/filter_by_tags?${params.toString()}`;
+        }
     }
     
     function removeTagFromMod(event, modId, tagId) {
         event.stopPropagation();
         
-        const deleteButton = event.target;
-        const originalText = deleteButton.textContent;
-        deleteButton.textContent = '×';
-        deleteButton.disabled = true;
-        
-        fetch(`/mod/${modId}/remove_tag/${tagId}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Находим и удаляем элемент тега
-                const tagElement = event.target.closest('.assigned-tag-container');
-                tagElement.remove();
-                
-                showFlashMessage('Тег удален из мода', 'success');
-            } else {
+        if (confirm('Удалить тег из этого мода?')) {
+            const deleteButton = event.target;
+            const originalText = deleteButton.textContent;
+            deleteButton.textContent = '×';
+            deleteButton.disabled = true;
+            
+            fetch(`/mod/${modId}/remove_tag/${tagId}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Находим и удаляем элемент тега
+                    const tagElement = event.target.closest('.assigned-tag-container');
+                    tagElement.remove();
+                    
+                    showFlashMessage('Тег удален из мода', 'success');
+                } else {
+                    showFlashMessage('Ошибка при удалении тега', 'danger');
+                }
+            })
+            .catch(error => {
                 showFlashMessage('Ошибка при удалении тега', 'danger');
-            }
-        })
-        .catch(error => {
-            showFlashMessage('Ошибка при удалении тега', 'danger');
-        })
-        .finally(() => {
-            deleteButton.textContent = originalText;
-            deleteButton.disabled = false;
-        });
+            })
+            .finally(() => {
+                deleteButton.textContent = originalText;
+                deleteButton.disabled = false;
+            });
+        }
     }
 
     function addTagToMod(event, modId, tagId) {
