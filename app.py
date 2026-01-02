@@ -77,6 +77,10 @@ def edit_tag_route(tag_id):
         flash(f"Тег успешно обновлен!", "success")
     except ValueError as e:
         flash(str(e), "danger")
+    except Exception as e:
+        # Добавим логирование для отладки
+        print(f"Ошибка при редактировании тега {tag_id}: {str(e)}")
+        flash(f"Ошибка при редактировании тега: {str(e)}", "danger")
     return redirect(url_for('tags_page'))
 
 @app.route('/delete_tag/<int:tag_id>', methods=['POST'])

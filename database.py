@@ -190,7 +190,7 @@ def add_tag(tag_name):
         conn.close()
 
 def update_tag(tag_id, new_name):
-    """Обновить название тега"""
+    """Обновляет название тега"""
     if not new_name or len(new_name.strip()) < 2:
         raise ValueError("Название тега должно содержать минимум 2 символа")
     
@@ -198,18 +198,33 @@ def update_tag(tag_id, new_name):
     cursor = conn.cursor()
     
     try:
+        # Для SQLite и MySQL используем разные запросы
         if config.DATABASE_TYPE == 'sqlite':
+            # Проверяем, существует ли тег с таким именем (кроме текущего)
+            cursor.execute("SELECT id FROM tags WHERE name = ? AND id != ?", (new_name.strip(), tag_id))
+            existing = cursor.fetchone()
+            if existing:
+                conn.close()
+                raise ValueError(f"Тег '{new_name}' уже существует")
+            
             cursor.execute("UPDATE tags SET name = ? WHERE id = ?", (new_name.strip(), tag_id))
         else:
+            # Для MySQL используем INSERT IGNORE с проверкой
+            cursor.execute("SELECT id FROM tags WHERE name = %s AND id != %s", (new_name.strip(), tag_id))
+            existing = cursor.fetchone()
+            if existing:
+                conn.close()
+                raise ValueError(f"Тег '{new_name}' уже существует")
+            
             cursor.execute("UPDATE tags SET name = %s WHERE id = %s", (new_name.strip(), tag_id))
         
         if cursor.rowcount == 0:
             conn.close()
             raise ValueError("Тег не найден")
         conn.commit()
-    except (sqlite3.IntegrityError, pymysql.IntegrityError):
+    except Exception as e:
         conn.close()
-        raise ValueError(f"Тег '{new_name}' уже существует")
+        raise e
     finally:
         conn.close()
 
