@@ -1,0 +1,6 @@
+.env
+.env.example
+database.db
+__pycache__/config.cpython-310.pyc
+__pycache__/database.cpython-310.pyc
+__pycache__/parser.cpython-310.pyc
