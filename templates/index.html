@@ -7,16 +7,20 @@
 </head>
 <body>
     <header>
-        <h1>📁 Мои моды для Sims 4</h1>
+        <h1>
+            <img src="./static/header.png" alt="📁" width="60" style="vertical-align: middle; margin-right: 10px;">
+            Мои моды для Sims 4
+        </h1>
         <canvas id="sparkleCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;"></canvas>
         <div class="header-actions">
-            <a href="/tags" class="tag-btn header-tag-btn">🏷️ Управление тегами</a>
-            <form action="/add" method="POST">
-                <input type="url" name="mod_url" 
-                       placeholder="https://sims-market.ru/mod/..." 
-                       required>
-                <button type="submit">+ Добавить мод</button>
-            </form>
+            <a href="/tags" class="header-tag-btn">🏷️ Управление тегами</a>
+            <div class="header-form-wrapper">
+                <form action="/add" method="POST" class="header-form">
+                    <input type="url" name="mod_url" 
+                        placeholder="https://sims-market.ru/mod/..." required>
+                    <button type="submit">+ Добавить мод</button>
+                </form>
+            </div>
         </div>
     </header>
 

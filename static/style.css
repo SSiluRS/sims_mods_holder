@@ -7,36 +7,85 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f5f5f5;
-    color: #333;
+    color: #10091D; /* тёмный текст */
     line-height: 1.6;
 }
 
+/* === HEADER === */
 header {
     text-align: center;
     padding: 2rem;
     background: linear-gradient(135deg, #c4b5fd 0%, #fbcfe8 100%); /* Мягкий лавандово-розовый градиент как на картинке */
     color: white;
     margin-bottom: 2rem;
-
-    /* Добавляем блеск purple — фиолетовое свечение */
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5); /* Фиолетовый блеск (purple-500) */
     position: relative;
     overflow: hidden;
     opacity: 0.8;
+}
+
+header h1 {
+    font-size: 3.2rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(212, 20, 20, 0.2);
 }
 
 .header-actions {
     display: flex;
     gap: 15px;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between; /* ← распределяет элементы: первый слева, второй справа */
     flex-wrap: wrap;
     margin-top: 1rem;
+    width: 100%;
+}
+
+/* Центрируем форму внутри обёртки */
+.header-form-wrapper {
+    display: flex;
+    align-items: center;
+    margin: 0 auto; /* ← центрирует форму */
+}
+
+.header-form {
+    display: flex;
+    gap: 10px;
+    height: 42px; /* фиксированная высота */
+    margin: 0;
+}
+
+.header-form input,
+.header-form button {
+    height: 100%;
+    margin: 0;
+}
+
+.header-form input {
+    background: #B3A3BA;
+    color: #10091D;
+    flex: 1;
+}
+
+.header-form input:focus {
+    outline: 2px solid #8D769A;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.header-form button {
+    background: #46315C;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 4px;
+}
+
+.header-form button:hover {
+    background: #28193D;
 }
 
 .header-tag-btn {
-    background: white;
-    color: #2575fc;
+    background: #68507B;
+    color: white;
     padding: 8px 15px;
     text-decoration: none;
     border-radius: 5px;
@@ -46,7 +95,7 @@ header {
 }
 
 .header-tag-btn:hover {
-    background: #e3f2fd;
+    background: #46315C;
     transform: translateY(-2px);
 }
 
@@ -63,21 +112,32 @@ input {
     border: none;
     border-radius: 4px;
     font-size: 16px;
+    background: #B3A3BA;
+    color: #10091D;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+input:focus {
+    outline: 2px solid #8D769A;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
 }
 
 button {
-    background: #ffc107;
+    background: #46315C;
     border: none;
     padding: 0 25px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s;
+    color: white;
+    border-radius: 4px;
 }
 
 button:hover {
-    background: #ff9800;
+    background: #28193D;
 }
 
+/* === КАРТОЧКИ === */
 .cards-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -86,10 +146,11 @@ button:hover {
 }
 
 .card {
-    background: white;
+    background: linear-gradient(135deg, #c4b5fd 0%, #fbcfe8 100%); /* Мягкий лавандово-розовый градиент как на картинке */
+    
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(40, 25, 61, 0.1);
     transition: transform 0.3s;
     position: relative;
     display: flex;
@@ -99,29 +160,7 @@ button:hover {
 
 .card:hover {
     transform: translateY(-5px);
-}
-
-.card img {
-    width: 100%;
-    height: 180px;
-    object-fit: contain;  /* ПОКАЗЫВАЕМ ВСЁ ИЗОБРАЖЕНИЕ, НЕ ОБРЕЗАЯ */
-    object-position: center;
-    display: block;
-}
-
-.card {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    transition: transform 0.3s;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-}
-
-.card:hover {
-    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(40, 25, 61, 0.2);
 }
 
 .card img {
@@ -130,14 +169,16 @@ button:hover {
     object-fit: contain;
     object-position: center;
     display: block;
+    background: transparent;
+    margin-top: 1rem;
 }
 
 .card-content {
     padding: 0.8rem;
     display: flex;
     flex-direction: column;
-    flex: 1;  /* Занимает всё оставшееся место */
-    justify-content: space-between;  /* Выравнивание по вертикали: элементы вверху и внизу */
+    flex: 1;
+    justify-content: space-between;
     gap: 4px;
 }
 
@@ -148,10 +189,10 @@ button:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.3;
-    flex-shrink: 0;  /* Не сжимается */
+    flex-shrink: 0;
+    color: #28193D;
 }
 
-/* Контейнер для тегов и метаданных - будет вверху */
 .content-top {
     display: flex;
     flex-direction: column;
@@ -159,21 +200,20 @@ button:hover {
     flex-shrink: 0;
 }
 
-/* Контейнер для кнопок - будет внизу */
 .content-bottom {
     display: flex;
     flex-direction: column;
     gap: 4px;
     flex-shrink: 0;
-    margin-top: auto;  /* Прижимает вниз */
+    margin-top: auto;
 }
 
 .meta {
     display: flex;
     justify-content: space-between;
-    color: #666;
+    color: #68507B;
     font-size: 0.85rem;
-    margin: 4px 0;  /* Уменьшаем отступ сверху и снизу */
+    margin: 4px 0;
     gap: 8px;
 }
 
@@ -185,7 +225,7 @@ button:hover {
 }
 
 .dropdown-btn {
-    background: #f5f5f5;
+    background: #B3A3BA;
     border: none;
     padding: 6px 10px;
     font-size: 1.2rem;
@@ -196,10 +236,12 @@ button:hover {
     min-width: 30px;
     text-align: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: #10091D;
 }
 
 .dropdown-btn:hover {
-    background: #e0e0e0;
+    background: #8D769A;
+    color: white;
 }
 
 .dropdown-content {
@@ -208,7 +250,7 @@ button:hover {
     right: 0;
     background-color: white;
     min-width: 160px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(40, 25, 61, 0.15);
     z-index: 10;
     border-radius: 4px;
     overflow: hidden;
@@ -223,13 +265,14 @@ button:hover {
     padding: 10px 16px;
     text-decoration: none;
     display: block;
-    color: #333;
+    color: #10091D;
     border-bottom: 1px solid #eee;
     transition: background 0.2s;
 }
 
 .dropdown-item:hover {
-    background: #f5f5f5;
+    background: #B3A3BA;
+    color: white;
 }
 
 .dropdown-item:last-child {
@@ -237,22 +280,23 @@ button:hover {
 }
 
 .dropdown-item.delete-btn {
-    color: #f44336;
+    color: #46315C;
 }
 
 .dropdown-item.delete-btn:hover {
-    background: #ffebee;
+    background: #28193D;
+    color: white;
 }
 
 .empty {
     grid-column: 1 / -1;
     text-align: center;
     padding: 4rem;
-    color: #666;
+    color: #68507B;
     font-size: 1.2rem;
 }
 
-/* Стили для flash-сообщений */
+/* === ФИЛЬТРЫ И FLASH === */
 .filter-indicator {
     max-width: 800px;
     margin: 15px auto;
@@ -264,16 +308,16 @@ button:hover {
 }
 
 .filter-text {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: #B3A3BA;
+    color: #10091D;
     padding: 8px 15px;
     border-radius: 20px;
     font-weight: 500;
-    border: 1px solid #bbdefb;
+    border: 1px solid #8D769A;
 }
 
 .filter-clear-btn {
-    background: #f44336;
+    background: #46315C;
     color: white;
     border: none;
     width: 24px;
@@ -289,7 +333,7 @@ button:hover {
 }
 
 .filter-clear-btn:hover {
-    background: #d32f2f;
+    background: #28193D;
     transform: scale(1.1);
 }
 
@@ -300,11 +344,11 @@ button:hover {
 }
 
 .flash-success {
-    background: #d4edda;
-    color: #155724;
+    background: #68507B;
+    color: white;
     padding: 12px 20px;
     border-radius: 6px;
-    border: 1px solid #c3e6cb;
+    border: 1px solid #46315C;
     text-align: center;
     font-weight: 500;
     margin-bottom: 15px;
@@ -312,23 +356,23 @@ button:hover {
 }
 
 .flash-danger {
-    background: #f8d7da;
-    color: #721c24;
+    background: #46315C;
+    color: white;
     padding: 12px 20px;
     border-radius: 6px;
-    border: 1px solid #f5c6cb;
+    border: 1px solid #28193D;
     text-align: center;
     font-weight: 500;
     margin-bottom: 15px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* Стили для назначенных тегов и плюсика */
+/* === ТЕГИ === */
 .assigned-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    margin: 4px 0;  /* Уменьшаем отступ сверху и снизу */
+    margin: 4px 0;
     align-items: center;
 }
 
@@ -339,14 +383,14 @@ button:hover {
 }
 
 .assigned-tag {
-    background: #2196F3;
+    background: #68507B;
     color: white;
-    padding: 4px 25px 4px 10px; /* Увеличен отступ справа для крестика */
+    padding: 4px 25px 4px 10px;
     border-radius: 15px;
     font-size: 11px;
     text-decoration: none;
     transition: all 0.2s;
-    height: 20px;  /* Уменьшаем высоту */
+    height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -356,7 +400,7 @@ button:hover {
 }
 
 .assigned-tag:hover {
-    background: #1976d2;
+    background: #46315C;
     transform: scale(1.05);
 }
 
@@ -385,7 +429,7 @@ button:hover {
 }
 
 .tag-plus-btn {
-    background: #2196F3;
+    background: #68507B;
     color: white;
     border: none;
     padding: 3px 10px;
@@ -404,17 +448,16 @@ button:hover {
 }
 
 .tag-plus-btn:hover {
-    background: #1976d2;
+    background: #46315C;
     transform: scale(1.05);
 }
 
-/* Стили для выпадающего списка тегов */
 .tag-dropdown {
     position: absolute;
     background: white;
     border: 1px solid #ddd;
     border-radius: 5px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(40, 25, 61, 0.15);
     min-width: 180px;
     max-height: 300px;
     overflow-y: auto;
@@ -427,11 +470,6 @@ button:hover {
     display: block;
 }
 
-.tag-item-form {
-    margin: 0;
-    padding: 0;
-}
-
 .tag-item {
     display: block;
     width: 100%;
@@ -442,14 +480,15 @@ button:hover {
     cursor: pointer;
     transition: background 0.2s;
     font-size: 14px;
+    color: #10091D;
 }
 
 .tag-item:hover {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: #B3A3BA;
+    color: white;
 }
 
-/* Стили для страницы управления тегами */
+/* === УПРАВЛЕНИЕ ТЕГАМИ === */
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -461,16 +500,12 @@ button:hover {
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 30px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(40, 25, 61, 0.1);
 }
 
 .tag-form h2 {
     margin-bottom: 15px;
-    color: #2575fc;
-}
-
-.form-group {
-    margin-bottom: 15px;
+    color: #46315C;
 }
 
 .form-group input {
@@ -480,12 +515,14 @@ button:hover {
     border-radius: 5px;
     font-size: 16px;
     transition: border-color 0.3s;
+    background: #B3A3BA;
+    color: #10091D;
 }
 
 .form-group input:focus {
-    border-color: #2575fc;
+    border-color: #8D769A;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(37, 117, 252, 0.2);
+    box-shadow: 0 0 0 2px rgba(141, 118, 154, 0.2);
 }
 
 .tag-btn {
@@ -498,36 +535,34 @@ button:hover {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    color: white;
 }
 
 .tag-btn-add {
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    color: white;
+    background: linear-gradient(135deg, #46315C 0%, #28193D 100%);
 }
 
 .tag-btn-add:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(37, 117, 252, 0.4);
+    box-shadow: 0 4px 15px rgba(40, 25, 61, 0.4);
 }
 
 .tag-btn-save {
-    background: #4CAF50;
-    color: white;
+    background: #68507B;
     padding: 5px 10px;
 }
 
 .tag-btn-save:hover {
-    background: #45a049;
+    background: #46315C;
 }
 
 .tag-btn-delete {
-    background: #f44336;
-    color: white;
+    background: #46315C;
     padding: 5px 10px;
 }
 
 .tag-btn-delete:hover {
-    background: #d32f2f;
+    background: #28193D;
 }
 
 .tags-table {
@@ -537,11 +572,11 @@ button:hover {
     background: white;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(40, 25, 61, 0.1);
 }
 
 .tags-table th {
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    background: linear-gradient(135deg, #68507B 0%, #46315C 100%);
     color: white;
     text-align: left;
     padding: 12px 15px;
@@ -551,10 +586,11 @@ button:hover {
 .tags-table td {
     padding: 10px 15px;
     border-bottom: 1px solid #eee;
+    color: #10091D;
 }
 
 .tags-table tr:hover {
-    background-color: #f9f9f9;
+    background-color: #B3A3BA;
 }
 
 .tag-input {
@@ -563,28 +599,31 @@ button:hover {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    background: #B3A3BA;
+    color: #10091D;
 }
 
 .back-link {
     display: inline-block;
     margin-bottom: 20px;
-    color: #2575fc;
+    color: #46315C;
     text-decoration: none;
     font-weight: bold;
 }
 
 .back-link:hover {
     text-decoration: underline;
+    color: #28193D;
 }
 
 .tag-link {
-    color: #2196F3;
+    color: #68507B;
     text-decoration: none;
     font-weight: 500;
 }
 
 .tag-link:hover {
-    color: #1976d2;
+    color: #46315C;
     text-decoration: underline;
 }
 
@@ -599,7 +638,6 @@ button:hover {
     }
 }
 
-/* Убедитесь, что flash-сообщения не мешают основному потоку */
 .flash-container {
     position: fixed;
     top: 20px;
@@ -608,7 +646,7 @@ button:hover {
 }
 
 .active-filter-tag {
-    background: #e91e63 !important;
+    background: #46315C !important;
     position: relative;
 }
 
@@ -617,7 +655,7 @@ button:hover {
     position: absolute;
     top: -5px;
     right: -5px;
-    background: #4CAF50;
+    background: #68507B;
     color: white;
     border-radius: 50%;
     width: 16px;
