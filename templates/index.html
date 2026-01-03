@@ -92,14 +92,14 @@
                             <div class="assigned-tag-container">
                                 <span class="assigned-tag" onclick="filterByTag({{ tag[0] }})">
                                     {{ tag[1] }}
-                                    <span class="assigned-tag-delete" onclick="removeTagFromMod(event, {{ mod[0] }}, {{ tag[0] }})">×</span>
+                                    <span class="assigned-tag-delete">×</span>
                                 </span>
                             </div>
                             {% endfor %}
                         {% endif %}
                         
                         <!-- Плюсик в стиле тега -->
-                        <button class="tag-plus-btn" onclick="toggleTagDropdown(this)">+</button>
+                        <button class="tag-plus-btn">+</button>
                         <div class="tag-dropdown">
                             {% for tag in all_tags %}
                             <button type="button" class="tag-item" 
@@ -125,16 +125,42 @@
     </main>
 
     <script>
-    // Функция для переключения выпадающего списка
-    function toggleTagDropdown(button) {
-        const dropdown = button.nextElementSibling;
-        dropdown.classList.toggle('show');
-        
-        // Закрыть другие выпадающие списки
-        document.querySelectorAll('.tag-dropdown').forEach(d => {
-            if (d !== dropdown && d.classList.contains('show')) {
-                d.classList.remove('show');
+
+        // === Единый обработчик для всех выпадающих списков ===
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработчик клика по кнопке
+        document.addEventListener('click', function(e) {
+            // Обработка клика по .dropdown-btn
+            if (e.target.closest('.dropdown-btn')) {
+                e.stopPropagation();
+                const button = e.target.closest('.dropdown-btn');
+                const dropdown = button.nextElementSibling;
+                closeAllDropdowns();
+                dropdown.classList.toggle('show');
             }
+            // Обработка клика по .tag-plus-btn
+            else if (e.target.closest('.tag-plus-btn')) {
+                e.stopPropagation();
+                const button = e.target.closest('.tag-plus-btn');
+                const dropdown = button.nextElementSibling;
+                closeAllDropdowns();
+                dropdown.classList.toggle('show');
+            }
+        });
+
+        // Обработчик клика вне выпадающих списков
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-btn') && !e.target.closest('.dropdown-content') &&
+                !e.target.closest('.tag-plus-btn') && !e.target.closest('.tag-dropdown')) {
+                closeAllDropdowns();
+            }
+        });
+    });
+
+    // Функция для закрытия всех выпадающих списков
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown-content, .tag-dropdown').forEach(dropdown => {
+            dropdown.classList.remove('show');
         });
     }
 
@@ -149,15 +175,6 @@
         }
     };
 
-    // Закрыть выпадающие списки при клике вне их
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.tag-plus-btn') && !e.target.closest('.tag-dropdown')) {
-            document.querySelectorAll('.tag-dropdown').forEach(d => {
-                d.classList.remove('show');
-            });
-        }
-    });
-
     function downloadMod(downloadLink) {
         if (!downloadLink || downloadLink.trim() === '') {
             alert('Ссылка для скачивания отсутствует');
@@ -165,26 +182,6 @@
         }
         window.open(downloadLink, '_blank');
     }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.dropdown-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const dropdown = this.nextElementSibling;
-                dropdown.classList.toggle('show');
-            });
-        });
-
-        window.addEventListener('click', function(e) {
-            if (!e.target.matches('.dropdown-btn')) {
-                document.querySelectorAll('.dropdown-content').forEach(dropdown => {
-                    if (dropdown.classList.contains('show')) {
-                        dropdown.classList.remove('show');
-                    }
-                });
-            }
-        });
-    });
 
     function filterByTag(tagId) {
         // Получаем текущие активные фильтры из URL
