@@ -8,6 +8,7 @@
 <body>
     <header>
         <h1>📁 Мои моды для Sims 4</h1>
+        <canvas id="sparkleCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;"></canvas>
         <div class="header-actions">
             <a href="/tags" class="tag-btn header-tag-btn">🏷️ Управление тегами</a>
             <form action="/add" method="POST">
@@ -50,10 +51,19 @@
                 <div class="dropdown">
                     <button class="dropdown-btn">⋮</button>
                     <div class="dropdown-content">
+                        <!-- Открыть на Sims-Market -->
+                        <a href="{{ mod[3] | escape }}" target="_blank" class="dropdown-item">
+                            🌐 Открыть на Sims-Market
+                        </a>
                         <!-- Ссылка для скачивания -->
                         <a href="#" class="dropdown-item" 
                            onclick="downloadMod('{{ mod[6] | escape }}'); return false;">
                             ⬇️ Скачать ZIP
+                        </a>
+                        <!-- Кнопка удаления в стиле dropdown-item -->
+                        <a href="#" class="dropdown-item delete-btn" 
+                           onclick="deleteMod({{ mod[0] }}, '{{ mod[1] | escape }}'); return false;">
+                            🗑 Удалить мод
                         </a>
                     </div>
                 </div>
@@ -63,13 +73,9 @@
                  onerror="this.src='https://via.placeholder.com/250x150?text=No+Image'">
             
             <div class="card-content">
-                <!-- Верхняя часть (заголовок и теги) -->
+                <!-- Верхняя часть (заголовок) -->
                 <div class="content-top">
-                    <h2>{{ mod[1] | escape }}</h2>
-                    
-                    
-                    
-                    
+                    <h2>{{ mod[1] | escape }}</h2>                       
                 </div>
                 
                 <!-- Нижняя часть (ссылки и кнопки) -->
@@ -98,17 +104,7 @@
                             </button>
                             {% endfor %}
                         </div>
-                    </div>
-                    <p class="meta">
-                        <span>📅 {{ mod[4] | escape }}</span>
-                        <span>⬇️ {{ mod[5] | escape }}</span>
-                    </p>
-                    <a href="{{ mod[3] | escape }}" target="_blank" class="card-link">Открыть на Sims-Market</a>
-                    
-                    <form action="/delete/{{ mod[0] }}" method="POST" class="delete-form" 
-                        onsubmit="return confirm('Удалить мод &quot;{{ mod[1] | escape }}&quot;?')">
-                        <button type="submit" class="delete-btn">🗑 Удалить</button>
-                    </form>
+                    </div>                    
                 </div>
             </div>
         </div>
@@ -137,6 +133,17 @@
             }
         });
     }
+
+    function deleteMod(modId, modTitle) {
+        if (confirm('Удалить мод "' + modTitle + '"?')) {
+            // Создаем форму для отправки POST-запроса
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/delete/' + modId;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
 
     // Закрыть выпадающие списки при клике вне их
     document.addEventListener('click', function(e) {
@@ -347,6 +354,62 @@
         addTagToMod(event, modId, tagId);
     }
 
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('sparkleCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        // Адаптация под размер header
+        const resizeCanvas = () => {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        };
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // === Мелкие блестки (80 шт) ===
+        const sparkles = [];
+        const count = 500;
+
+        for (let i = 0; i < count; i++) {
+            sparkles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                baseRadius: Math.random() * 0.3 + 0.1, // 0.5–1.5px
+                pulseSpeed: Math.random() * 4 + 3, // 0.5–1.3 Гц
+                phase: Math.random() * Math.PI * 2,
+            });
+        }
+
+        // === Анимация ===
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const t = Date.now() / 1000;
+
+            // Рисуем мелкие блестки
+            for (const s of sparkles) {
+                const pulse = Math.sin(t * s.pulseSpeed + s.phase) * 0.5 + 0.5; // 0 → 1
+                const radius = s.baseRadius * (1 + pulse * 0.8);
+                const opacity = 0.3 + pulse * 0.7;
+
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.fill();
+
+                // Фиолетовое свечение
+                ctx.shadowBlur = 10 * pulse;
+                ctx.shadowColor = `rgba(139, 92, 246, ${pulse * 0.6})`;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    });
     </script>
 </body>
 </html>

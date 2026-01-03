@@ -21,16 +21,6 @@ def parse_mod_data(url):
         if image_url.startswith('/'):
             image_url = 'https://sims-market.ru' + image_url  # Сделать абсолютным
 
-        date_element = soup.select_one('.mod__date')
-        if not date_element:
-            raise ValueError("Дата публикации не найдена")
-        date = date_element.text.strip()
-
-        downloads_element = soup.select_one('.mod__downloads')
-        if not downloads_element:
-            raise ValueError("Количество загрузок не найдено")
-        downloads = downloads_element.text.strip()
-
         # Извлечение ссылки для скачивания ZIP
         download_link_element = soup.select_one('#mod_download_link')
         if not download_link_element or not download_link_element.get('href'):
@@ -43,8 +33,6 @@ def parse_mod_data(url):
             'title': title,
             'image_url': image_url,
             'link': url,
-            'date': date,
-            'downloads': downloads,
             'download_link': download_link  # Добавляем ссылку для скачивания
         }
     except Exception as e:

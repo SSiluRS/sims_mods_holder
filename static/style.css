@@ -14,9 +14,15 @@ body {
 header {
     text-align: center;
     padding: 2rem;
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    background: linear-gradient(135deg, #c4b5fd 0%, #fbcfe8 100%); /* Мягкий лавандово-розовый градиент как на картинке */
     color: white;
     margin-bottom: 2rem;
+
+    /* Добавляем блеск purple — фиолетовое свечение */
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5); /* Фиолетовый блеск (purple-500) */
+    position: relative;
+    overflow: hidden;
+    opacity: 0.8;
 }
 
 .header-actions {
@@ -162,8 +168,6 @@ button:hover {
     margin-top: auto;  /* Прижимает вниз */
 }
 
-
-/* Уменьшаем расстояние между тегами и метаданными */
 .meta {
     display: flex;
     justify-content: space-between;
@@ -172,21 +176,6 @@ button:hover {
     margin: 4px 0;  /* Уменьшаем отступ сверху и снизу */
     gap: 8px;
 }
-
-/* Уменьшаем отступы для кнопок */
-.card-link {
-    display: block;
-    text-align: center;
-    background: #e3f2fd;
-    color: #1976d2;
-    padding: 6px 8px;
-    text-decoration: none;
-    border-radius: 4px;
-    margin-top: 4px;
-    transition: background 0.3s;
-    font-size: 0.9rem;
-}
-
 
 .card-actions {
     position: absolute;
@@ -247,21 +236,12 @@ button:hover {
     border-bottom: none;
 }
 
-.delete-btn {
-    background: #f44336;
-    color: white;
-    border: none;
-    padding: 6px 10px;
-    font-size: 0.85rem;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-    width: 100%;
-    flex-shrink: 0;
+.dropdown-item.delete-btn {
+    color: #f44336;
 }
 
-.delete-btn:hover {
-    background: #d32f2f;
+.dropdown-item.delete-btn:hover {
+    background: #ffebee;
 }
 
 .empty {

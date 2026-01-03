@@ -47,8 +47,6 @@ def init_db():
                 title TEXT NOT NULL,
                 image_url TEXT NOT NULL,
                 link TEXT NOT NULL UNIQUE,
-                date TEXT,
-                downloads TEXT,
                 download_link TEXT
             )
         ''')
@@ -81,8 +79,6 @@ def init_db():
                 title TEXT NOT NULL,
                 image_url TEXT NOT NULL,
                 link TEXT NOT NULL UNIQUE,
-                date TEXT,
-                downloads TEXT,
                 download_link TEXT
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ''')
@@ -118,27 +114,23 @@ def add_mod(mod_data):
     if config.DATABASE_TYPE == 'sqlite':
         cursor.execute('''
             INSERT OR IGNORE INTO mods 
-            (title, image_url, link, date, downloads, download_link) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            (title, image_url, link, download_link) 
+            VALUES (?, ?, ?, ?)
         ''', (
             mod_data['title'],
             mod_data['image_url'],
             mod_data['link'],
-            mod_data['date'],
-            mod_data['downloads'],
             mod_data.get('download_link', '')
         ))
     else:
         cursor.execute('''
             INSERT IGNORE INTO mods 
-            (title, image_url, link, date, downloads, download_link) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            (title, image_url, link, download_link) 
+            VALUES (%s, %s, %s, %s)
         ''', (
             mod_data['title'],
             mod_data['image_url'],
             mod_data['link'],
-            mod_data['date'],
-            mod_data['downloads'],
             mod_data.get('download_link', '')
         ))
     
