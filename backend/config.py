@@ -7,7 +7,7 @@ if os.path.exists('.env'):
 
 class Config:
     """Базовая конфигурация"""
-    APP_VERSION = os.getenv('APP_VERSION', 'unknown')
+    APP_VERSION = os.getenv('APP_VERSION', 'latest')
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev_secret_key')
     DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')

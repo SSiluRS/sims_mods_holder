@@ -4,7 +4,6 @@
         <h1>
             <img src="/header.png" alt="📁" width="60" style="vertical-align: middle; margin-right: 10px;">
             Мои моды для Sims 4
-            <span class="app-version-header" v-if="appVersion">{{ appVersion }}</span>
         </h1>
         <canvas id="sparkleCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;"></canvas>
         <div class="header-actions">
@@ -119,8 +118,7 @@ export default {
             activeTagDropdown: null,
             flashMessage: '',
             flashType: 'success',
-            loading: false,
-            appVersion: ''
+            loading: false
         }
     },
     computed: {
@@ -140,23 +138,9 @@ export default {
     methods: {
         async fetchData() {
             try {
-                const [dataRes, versionRes] = await Promise.all([
-                    axios.get('/api/data'),
-                    axios.get('/api/version')
-                ]);
-                this.mods = dataRes.data.mods;
-                this.allTags = dataRes.data.tags;
-                
-                let v = versionRes.data.version;
-                let env = versionRes.data.environment;
-                
-                if (v === 'latest') {
-                    this.appVersion = 'latest (development)';
-                } else {
-                    const prefix = 'v';
-                    const envSuffix = (env && env !== 'production') ? ` (${env})` : '';
-                    this.appVersion = `${prefix}${v}${envSuffix}`;
-                }
+                const response = await axios.get('/api/data');
+                this.mods = response.data.mods;
+                this.allTags = response.data.tags;
             } catch (error) {
                 this.showFlash('Ошибка загрузки данных', 'danger');
             }
