@@ -1,5 +1,6 @@
 services:
   app:
+    image: sims-mods-backend:${APP_VERSION:-latest}
     build: .
     ports:
       - "7066:7066"
@@ -10,6 +11,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    image: sims-mods-frontend:${APP_VERSION:-latest}
     build: ./frontend
     ports:
       - "8080:80"
