@@ -29,3 +29,6 @@ frontend/dist
 *.db
 *.sqlite3
 sims_mods.db
+
+# Build scripts
+build.ps1

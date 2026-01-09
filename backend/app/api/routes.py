@@ -116,6 +116,14 @@ def remove_tag_from_mod_route(mod_id, tag_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
 
+@bp.route('/version')
+def get_version():
+    """Эндпоинт для получения версии приложения"""
+    return jsonify({
+        "version": config.APP_VERSION,
+        "environment": config.FLASK_ENV
+    })
+
 @bp.route('/health')
 def health_check():
     """Эндпоинт для проверки состояния приложения"""
