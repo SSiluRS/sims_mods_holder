@@ -3,8 +3,7 @@ try:
     import pymysql
 except ImportError:
     pymysql = None
-from config import get_config
-from datetime import datetime
+from backend.config import get_config
 
 config = get_config()
 

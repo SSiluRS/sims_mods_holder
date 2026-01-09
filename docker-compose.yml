@@ -8,3 +8,11 @@ services:
     volumes:
       - ./sims_mods.db:/app/sims_mods.db
     restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+    restart: unless-stopped

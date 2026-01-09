@@ -15,8 +15,9 @@ class Config:
     DATABASE_TYPE = os.getenv('DATABASE_TYPE', 'sqlite')  # 'sqlite' или 'mysql'
     
     # SQLite конфигурация
-    SQLITE_DB = os.getenv('SQLITE_DB', 'sims_mods.db')
-    print(f"Using SQLite database file: {SQLITE_DB}")
+    # Корректируем путь к БД, чтобы он был относительно instance или корня
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    SQLITE_DB = os.getenv('SQLITE_DB', os.path.join(basedir, '..', 'sims_mods.db'))
     
     # MySQL конфигурация
     MYSQL_HOST = os.getenv('MYSQL_HOST')

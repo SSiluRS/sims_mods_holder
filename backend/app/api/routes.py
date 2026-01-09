@@ -1,22 +1,16 @@
-from flask import Flask, render_template, request, redirect, flash, url_for
-from database import init_db, get_all_mods, add_mod, delete_mod, get_all_tags, add_tag, update_tag, delete_tag, get_tags_for_mod, add_tag_to_mod, remove_tag_from_mod, get_db_connection
-from parser import parse_mod_data
-from config import get_config
-from flask import jsonify
+from flask import jsonify, request
+from backend.app.api import bp
+from backend.app.database import (
+    get_all_mods, add_mod, delete_mod, get_all_tags, add_tag, 
+    update_tag, delete_tag, get_tags_for_mod, add_tag_to_mod, 
+    remove_tag_from_mod, get_db_connection
+)
+from backend.app.utils.parser import parse_mod_data
+from backend.config import get_config
 
 config = get_config()
 
-app = Flask(__name__)
-app.secret_key = config.SECRET_KEY
-app.debug = config.DEBUG
-
-# ЗАМЕНИТЕ существующую функцию index() на эту:
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/api/data')
+@bp.route('/data', methods=['GET'])
 def get_data():
     mods = get_all_mods()
     all_tags = get_all_tags()
@@ -40,7 +34,7 @@ def get_data():
         'tags': tags_data
     })
 
-@app.route('/add', methods=['POST'])
+@bp.route('/mods', methods=['POST'])
 def add_mod_route():
     data = request.get_json()
     url = data.get('mod_url', '').strip()
@@ -55,7 +49,7 @@ def add_mod_route():
     except Exception as e:
         return jsonify({'success': False, 'message': f"Ошибка при добавлении мода: {str(e)}"})
 
-@app.route('/delete/<int:mod_id>', methods=['POST'])
+@bp.route('/mods/<int:mod_id>', methods=['DELETE'])
 def delete_mod_route(mod_id):
     try:
         delete_mod(mod_id)
@@ -63,17 +57,13 @@ def delete_mod_route(mod_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f"Ошибка при удалении: {str(e)}"})
 
-@app.route('/tags')
-def tags_page():
-    return render_template('tags.html')
-
-@app.route('/api/tags')
+@bp.route('/tags', methods=['GET'])
 def get_tags_api():
     tags = get_all_tags()
     tags_data = [{'id': t[0], 'name': t[1], 'created_at': t[2]} for t in tags]
     return jsonify({'tags': tags_data})
 
-@app.route('/add_tag', methods=['POST'])
+@bp.route('/tags', methods=['POST'])
 def add_tag_route():
     data = request.get_json()
     tag_name = data.get('tag_name', '').strip()
@@ -83,7 +73,7 @@ def add_tag_route():
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route('/edit_tag/<int:tag_id>', methods=['POST'])
+@bp.route('/tags/<int:tag_id>', methods=['PUT'])
 def edit_tag_route(tag_id):
     data = request.get_json()
     new_name = data.get('tag_name', '').strip()
@@ -95,7 +85,7 @@ def edit_tag_route(tag_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f"Ошибка: {str(e)}"})
 
-@app.route('/delete_tag/<int:tag_id>', methods=['POST'])
+@bp.route('/tags/<int:tag_id>', methods=['DELETE'])
 def delete_tag_route(tag_id):
     try:
         delete_tag(tag_id)
@@ -103,7 +93,30 @@ def delete_tag_route(tag_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f"Ошибка при удалении: {str(e)}"})
 
-@app.route('/health')
+@bp.route('/mods/<int:mod_id>/tags/<int:tag_id>', methods=['POST'])
+def add_tag_to_mod_route(mod_id, tag_id):
+    try:
+        add_tag_to_mod(mod_id, tag_id)
+        all_tags = get_all_tags()
+        tag_name = next((tag[1] for tag in all_tags if tag[0] == tag_id), "Неизвестный тег")
+        return jsonify({
+            'success': True,
+            'message': f'Тег "{tag_name}" добавлен к моду',
+            'tag_id': tag_id,
+            'tag_name': tag_name
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+
+@bp.route('/mods/<int:mod_id>/tags/<int:tag_id>', methods=['DELETE'])
+def remove_tag_from_mod_route(mod_id, tag_id):
+    try:
+        remove_tag_from_mod(mod_id, tag_id)
+        return jsonify({'success': True, 'message': 'Тег удален'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+
+@bp.route('/health')
 def health_check():
     """Эндпоинт для проверки состояния приложения"""
     try:
@@ -121,45 +134,5 @@ def health_check():
         "environment": config.FLASK_ENV,
         "database_type": config.DATABASE_TYPE,
         "database_status": db_status,
-        "debug_mode": app.debug
+        "debug_mode": config.DEBUG
     }, 200 if status == "OK" else 500
-
-@app.route('/mod/<int:mod_id>/add_tag/<int:tag_id>', methods=['POST'])
-def add_tag_to_mod_route(mod_id, tag_id):
-    try:
-        add_tag_to_mod(mod_id, tag_id)
-        all_tags = get_all_tags()
-        tag_name = next((tag[1] for tag in all_tags if tag[0] == tag_id), "Неизвестный тег")
-        return jsonify({
-            'success': True,
-            'message': f'Тег "{tag_name}" добавлен к моду',
-            'tag_id': tag_id,
-            'tag_name': tag_name
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 400
-
-@app.route('/mod/<int:mod_id>/remove_tag/<int:tag_id>', methods=['POST'])
-def remove_tag_from_mod_route(mod_id, tag_id):
-    try:
-        remove_tag_from_mod(mod_id, tag_id)
-        return jsonify({'success': True, 'message': 'Тег удален'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 400
-
-if __name__ == '__main__':
-    init_db()
-    
-    PORT = 7066
-    HOST = '0.0.0.0'
-    
-    print(f"🚀 Запуск приложения в режиме: {config.FLASK_ENV}")
-    print(f"🗃️  Тип базы данных: {config.DATABASE_TYPE}")
-    
-    if config.FLASK_ENV == 'development':
-        print("💡 Совет: Для запуска в продакшене используйте:")
-        print("   FLASK_ENV=production DATABASE_TYPE=mysql python app.py")
-    
-    app.run(host=HOST, 
-            port=PORT,
-            debug=config.DEBUG)
