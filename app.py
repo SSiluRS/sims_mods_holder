@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, flash, url_for
-from database import init_db, get_all_mods, add_mod, delete_mod, get_all_tags, add_tag, update_tag, delete_tag, get_tags_for_mod, add_tag_to_mod, remove_tag_from_mod
+from database import init_db, get_all_mods, add_mod, delete_mod, get_all_tags, add_tag, update_tag, delete_tag, get_tags_for_mod, add_tag_to_mod, remove_tag_from_mod, get_db_connection
 from parser import parse_mod_data
 from config import get_config
 from flask import jsonify
@@ -14,83 +14,94 @@ app.debug = config.DEBUG
 
 @app.route('/')
 def index():
+    return render_template('index.html')
+
+@app.route('/api/data')
+def get_data():
     mods = get_all_mods()
     all_tags = get_all_tags()
     
-    # Получаем теги для каждого мода
-    tags_for_mod = {}
+    mods_data = []
     for mod in mods:
-        tags_for_mod[mod[0]] = get_tags_for_mod(mod[0])
+        tags = get_tags_for_mod(mod[0])
+        mods_data.append({
+            'id': mod[0],
+            'title': mod[1],
+            'image': mod[2],
+            'url': mod[3],
+            'download_url': mod[4],
+            'tags': [{'id': t[0], 'name': t[1]} for t in tags]
+        })
+        
+    tags_data = [{'id': t[0], 'name': t[1], 'created_at': t[2]} for t in all_tags]
     
-    return render_template('index.html', 
-                         mods=mods, 
-                         all_tags=all_tags, 
-                         tags_for_mod=tags_for_mod,
-                         current_filter_tags=None,
-                         current_filter_names=None)
+    return jsonify({
+        'mods': mods_data,
+        'tags': tags_data
+    })
 
 @app.route('/add', methods=['POST'])
 def add_mod_route():
-    url = request.form.get('mod_url', '').strip()
+    data = request.get_json()
+    url = data.get('mod_url', '').strip()
+    
     if not url.startswith('https://sims-market.ru/mod/'):
-        flash("Неверный URL! Должен начинаться с https://sims-market.ru/mod/", "danger")
-        return redirect('/')
+        return jsonify({'success': False, 'message': "Неверный URL! Должен начинаться с https://sims-market.ru/mod/"})
     
     try:
         mod_data = parse_mod_data(url)
         add_mod(mod_data)
-        flash(f"Мод '{mod_data['title']}' успешно добавлен!", "success")
+        return jsonify({'success': True, 'message': f"Мод '{mod_data['title']}' успешно добавлен!"})
     except Exception as e:
-        flash(f"Ошибка при добавлении мода: {str(e)}", "danger")
-    
-    return redirect('/')
+        return jsonify({'success': False, 'message': f"Ошибка при добавлении мода: {str(e)}"})
 
 @app.route('/delete/<int:mod_id>', methods=['POST'])
 def delete_mod_route(mod_id):
     try:
         delete_mod(mod_id)
-        flash("Мод удален", "success")
+        return jsonify({'success': True, 'message': "Мод удален"})
     except Exception as e:
-        flash(f"Ошибка при удалении: {str(e)}", "danger")
-    return redirect('/')
+        return jsonify({'success': False, 'message': f"Ошибка при удалении: {str(e)}"})
 
 @app.route('/tags')
 def tags_page():
+    return render_template('tags.html')
+
+@app.route('/api/tags')
+def get_tags_api():
     tags = get_all_tags()
-    return render_template('tags.html', tags=tags)
+    tags_data = [{'id': t[0], 'name': t[1], 'created_at': t[2]} for t in tags]
+    return jsonify({'tags': tags_data})
 
 @app.route('/add_tag', methods=['POST'])
 def add_tag_route():
-    tag_name = request.form.get('tag_name', '').strip()
+    data = request.get_json()
+    tag_name = data.get('tag_name', '').strip()
     try:
         add_tag(tag_name)
-        flash(f"Тег '{tag_name}' успешно добавлен!", "success")
+        return jsonify({'success': True, 'message': f"Тег '{tag_name}' успешно добавлен!"})
     except ValueError as e:
-        flash(str(e), "danger")
-    return redirect(url_for('tags_page'))
+        return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/edit_tag/<int:tag_id>', methods=['POST'])
 def edit_tag_route(tag_id):
-    new_name = request.form.get('tag_name', '').strip()
+    data = request.get_json()
+    new_name = data.get('tag_name', '').strip()
     try:
         update_tag(tag_id, new_name)
-        flash(f"Тег успешно обновлен!", "success")
+        return jsonify({'success': True, 'message': "Тег успешно обновлен!"})
     except ValueError as e:
-        flash(str(e), "danger")
+        return jsonify({'success': False, 'message': str(e)})
     except Exception as e:
-        # Добавим логирование для отладки
-        print(f"Ошибка при редактировании тега {tag_id}: {str(e)}")
-        flash(f"Ошибка при редактировании тега: {str(e)}", "danger")
-    return redirect(url_for('tags_page'))
+        return jsonify({'success': False, 'message': f"Ошибка: {str(e)}"})
 
 @app.route('/delete_tag/<int:tag_id>', methods=['POST'])
 def delete_tag_route(tag_id):
     try:
         delete_tag(tag_id)
-        flash("Тег удален", "success")
+        return jsonify({'success': True, 'message': "Тег удален"})
     except Exception as e:
-        flash(f"Ошибка при удалении: {str(e)}", "danger")
-    return redirect(url_for('tags_page'))
+        return jsonify({'success': False, 'message': f"Ошибка при удалении: {str(e)}"})
 
 @app.route('/health')
 def health_check():
@@ -117,120 +128,38 @@ def health_check():
 def add_tag_to_mod_route(mod_id, tag_id):
     try:
         add_tag_to_mod(mod_id, tag_id)
-        
-        # Проверяем, это AJAX-запрос или обычный
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
-           request.content_type == 'application/json':
-            # AJAX-ответ
-            all_tags = get_all_tags()
-            tag_name = next((tag[1] for tag in all_tags if tag[0] == tag_id), "Неизвестный тег")
-            return jsonify({
-                'success': True,
-                'message': f'Тег "{tag_name}" добавлен к моду',
-                'tag_id': tag_id,
-                'tag_name': tag_name
-            })
-        else:
-            # Обычный редирект
-            flash("Тег успешно добавлен к моду", "success")
-            return redirect('/')
+        all_tags = get_all_tags()
+        tag_name = next((tag[1] for tag in all_tags if tag[0] == tag_id), "Неизвестный тег")
+        return jsonify({
+            'success': True,
+            'message': f'Тег "{tag_name}" добавлен к моду',
+            'tag_id': tag_id,
+            'tag_name': tag_name
+        })
     except Exception as e:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({
-                'success': False,
-                'message': str(e)
-            }), 400
-        else:
-            flash(f"Ошибка: {str(e)}", "danger")
-            return redirect('/')
+        return jsonify({'success': False, 'message': str(e)}), 400
 
 @app.route('/mod/<int:mod_id>/remove_tag/<int:tag_id>', methods=['POST'])
 def remove_tag_from_mod_route(mod_id, tag_id):
     try:
         remove_tag_from_mod(mod_id, tag_id)
-        
-        # Проверяем, это AJAX-запрос
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({
-                'success': True,
-                'message': 'Тег удален'
-            })
-        else:
-            flash("Тег удален из мода", "success")
-            return redirect('/')
+        return jsonify({'success': True, 'message': 'Тег удален'})
     except Exception as e:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({
-                'success': False,
-                'message': str(e)
-            }), 400
-        else:
-            flash(f"Ошибка: {str(e)}", "danger")
-            return redirect('/')
-
-@app.route('/filter_by_tag/<int:tag_id>')
-def filter_by_tag(tag_id):
-    # Получаем текущие фильтры из URL
-    current_tag_ids = request.args.getlist('tag_ids')
-    current_tag_ids = [int(tag_id) for tag_id in current_tag_ids if tag_id.isdigit()]
-    
-    # Добавляем новый тег к текущим
-    if tag_id not in current_tag_ids:
-        current_tag_ids.append(tag_id)
-    
-    # Перенаправляем на маршрут фильтрации по нескольким тегам
-    from flask import url_for
-    params = '&'.join([f'tag_ids={tid}' for tid in current_tag_ids])
-    return redirect(f'/filter_by_tags?{params}')
-
-@app.route('/filter_by_tags')
-def filter_by_tags():
-    # Получаем список тегов из GET-параметра
-    tag_ids = request.args.getlist('tag_ids')
-    tag_ids = [int(tag_id) for tag_id in tag_ids if tag_id.isdigit()]
-    
-    if not tag_ids:
-        return redirect('/')
-    
-    # Получаем все моды и теги
-    all_mods = get_all_mods()
-    all_tags = get_all_tags()
-    
-    # Фильтруем моды, которые имеют ВСЕ указанные теги
-    filtered_mods = []
-    for mod in all_mods:
-        mod_tags = get_tags_for_mod(mod[0])
-        mod_tag_ids = [tag[0] for tag in mod_tags]
-        
-        # Проверяем, есть ли у мода ВСЕ указанные теги
-        if all(tag_id in mod_tag_ids for tag_id in tag_ids):
-            filtered_mods.append(mod)
-    
-    # Получаем имена тегов для отображения
-    selected_tags = [(tag[0], tag[1]) for tag in all_tags if tag[0] in tag_ids]
-    
-    # Подготавливаем теги для каждого мода
-    tags_for_mod = {}
-    for mod in filtered_mods:
-        tags_for_mod[mod[0]] = get_tags_for_mod(mod[0])
-    
-    return render_template('index.html', 
-                         mods=filtered_mods,
-                         all_tags=all_tags,
-                         tags_for_mod=tags_for_mod,
-                         current_filter_tags=tag_ids,
-                         current_filter_names=selected_tags)
+        return jsonify({'success': False, 'message': str(e)}), 400
 
 if __name__ == '__main__':
     init_db()
+    
+    PORT = 7066
+    HOST = '0.0.0.0'
+    
     print(f"🚀 Запуск приложения в режиме: {config.FLASK_ENV}")
     print(f"🗃️  Тип базы данных: {config.DATABASE_TYPE}")
-    print(f"🔗 Адрес: http://localhost:5000")
     
     if config.FLASK_ENV == 'development':
         print("💡 Совет: Для запуска в продакшене используйте:")
         print("   FLASK_ENV=production DATABASE_TYPE=mysql python app.py")
     
-    app.run(host='0.0.0.0' if config.FLASK_ENV == 'production' else '127.0.0.1', 
-            port=7066 if config.FLASK_ENV == 'production' else 5000,
+    app.run(host=HOST, 
+            port=PORT,
             debug=config.DEBUG)

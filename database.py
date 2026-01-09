@@ -1,5 +1,8 @@
 import sqlite3
-import pymysql
+try:
+    import pymysql
+except ImportError:
+    pymysql = None
 from config import get_config
 from datetime import datetime
 
@@ -10,6 +13,8 @@ def get_db_connection():
     if config.DATABASE_TYPE == 'sqlite':
         return sqlite3.connect(config.SQLITE_DB)
     elif config.DATABASE_TYPE == 'mysql':
+        if pymysql is None:
+            raise ImportError("pymysql не установлен. Выполните: pip install pymysql")
         return pymysql.connect(
             host=config.MYSQL_HOST,
             port=config.MYSQL_PORT,

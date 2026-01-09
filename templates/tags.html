@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <title>Управление тегами</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
+    {% raw %}
+    <div id="app">
     <header>
         <h1>🏷️ Управление тегами</h1>
         <canvas id="sparkleCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;"></canvas>
@@ -16,9 +20,9 @@
         <!-- Форма добавления тега -->
         <div class="tag-form">
             <h2>Добавить новый тег</h2>
-            <form action="/add_tag" method="POST">
+            <form @submit.prevent="addTag">
                 <div class="form-group">
-                    <input type="text" name="tag_name" placeholder="Название тега (минимум 2 символа)" 
+                    <input type="text" v-model="newTagName" placeholder="Название тега (минимум 2 символа)" 
                            required maxlength="50">
                 </div>
                 <button type="submit" class="tag-btn tag-btn-add">+ Добавить тег</button>
@@ -27,17 +31,13 @@
 
         <!-- Список тегов -->
         <div class="tags-list">
-            <h2>Существующие теги ({{ tags|length }})</h2>
+            <h2>Существующие теги ({{ tags.length }})</h2>
             
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+            <div class="flash-container" v-if="flashMessage">
+                <div :class="'flash-' + flashType">{{ flashMessage }}</div>
+            </div>
             
-            {% if tags %}
+            <div v-if="tags.length > 0">
                 <table class="tags-table">
                     <thead>
                         <tr>
@@ -48,54 +48,114 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for tag in tags %}
-                        <tr>
+                        <tr v-for="tag in tags" :key="tag.id">
                             <td>
-                                <a href="/filter_by_tag/{{ tag[0] }}" class="tag-link">{{ tag[1] }}</a>
+                                <span class="tag-link">{{ tag.name }}</span>
                             </td>
                             <td>
-                                <form action="/edit_tag/{{ tag[0] }}" method="POST" class="edit-form">
-                                    <input type="text" name="tag_name" value="{{ tag[1] }}" 
+                                <form @submit.prevent="editTag(tag)" class="edit-form">
+                                    <input type="text" v-model="tag.editName" 
                                         class="tag-input" maxlength="50">
                                     <button type="submit" class="tag-btn tag-btn-save">💾</button>
                                 </form>
                             </td>
-                            <td>{{ tag[2] if tag[2] else 'N/A' }}</td>
+                            <td>{{ tag.created_at || 'N/A' }}</td>
                             <td>
-                                <form action="/delete_tag/{{ tag[0] }}" method="POST" 
-                                      onsubmit="return confirm('Удалить тег &quot;{{ tag[1] }}&quot;? Все связанные моды потеряют этот тег.')">
-                                    <button type="submit" class="tag-btn tag-btn-delete">🗑️</button>
-                                </form>
+                                <button @click="deleteTag(tag)" class="tag-btn tag-btn-delete">🗑️</button>
                             </td>
                         </tr>
-                        {% endfor %}
                     </tbody>
                 </table>
-            {% else %}
+            </div>
+            <div v-else>
                 <p class="empty">Нет созданных тегов. Добавьте первый!</p>
-            {% endif %}
+            </div>
         </div>
     </main>
+    </div>
+    {% endraw %}
 
     <script>
-    // Автофокус на поле ввода при загрузке
-    document.addEventListener('DOMContentLoaded', function() {
-        const input = document.querySelector('input[name="tag_name"]');
-        if (input) input.focus();
-        
-        // Обработка enter в форме редактирования
-        document.querySelectorAll('.edit-form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                const input = this.querySelector('input');
-                if (input.value.trim().length < 2) {
-                    e.preventDefault();
-                    alert('Название тега должно содержать минимум 2 символа');
-                }
-            });
-        });
-    });
+    const { createApp } = Vue;
 
-    document.addEventListener('DOMContentLoaded', () => {
+    createApp({
+        data() {
+            return {
+                tags: [],
+                newTagName: '',
+                flashMessage: '',
+                flashType: 'success'
+            }
+        },
+        methods: {
+            async fetchTags() {
+                try {
+                    const response = await axios.get('/api/tags');
+                    this.tags = response.data.tags.map(tag => ({
+                        ...tag,
+                        editName: tag.name // поле для редактирования
+                    }));
+                } catch (error) {
+                    this.showFlash('Ошибка загрузки тегов', 'danger');
+                }
+            },
+            async addTag() {
+                if (this.newTagName.length < 2) {
+                    alert('Название тега должно содержать минимум 2 символа');
+                    return;
+                }
+                try {
+                    const response = await axios.post('/add_tag', { tag_name: this.newTagName });
+                    if (response.data.success) {
+                        this.showFlash(response.data.message, 'success');
+                        this.newTagName = '';
+                        await this.fetchTags();
+                    } else {
+                        this.showFlash(response.data.message, 'danger');
+                    }
+                } catch (error) {
+                    this.showFlash('Ошибка при добавлении', 'danger');
+                }
+            },
+            async editTag(tag) {
+                if (tag.editName.length < 2) {
+                    alert('Название тега должно содержать минимум 2 символа');
+                    return;
+                }
+                try {
+                    const response = await axios.post(`/edit_tag/${tag.id}`, { tag_name: tag.editName });
+                    if (response.data.success) {
+                        tag.name = tag.editName;
+                        this.showFlash(response.data.message, 'success');
+                    } else {
+                        this.showFlash(response.data.message, 'danger');
+                    }
+                } catch (error) {
+                    this.showFlash('Ошибка при редактировании', 'danger');
+                }
+            },
+            async deleteTag(tag) {
+                if (!confirm(`Удалить тег "${tag.name}"? Все связанные моды потеряют этот тег.`)) return;
+                try {
+                    const response = await axios.post(`/delete_tag/${tag.id}`);
+                    if (response.data.success) {
+                        this.tags = this.tags.filter(t => t.id !== tag.id);
+                        this.showFlash(response.data.message, 'success');
+                    } else {
+                        this.showFlash(response.data.message, 'danger');
+                    }
+                } catch (error) {
+                    this.showFlash('Ошибка при удалении', 'danger');
+                }
+            },
+            showFlash(message, type) {
+                this.flashMessage = message;
+                this.flashType = type;
+                setTimeout(() => {
+                    this.flashMessage = '';
+                }, 3000);
+            },
+            initSparkles() {
         const canvas = document.getElementById('sparkleCanvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -150,7 +210,13 @@
         }
 
         animate();
-    });
+            }
+        },
+        mounted() {
+            this.fetchTags();
+            this.initSparkles();
+        }
+    }).mount('#app');
     </script>
 </body>
 </html>

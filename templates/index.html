@@ -4,358 +4,249 @@
     <meta charset="UTF-8">
     <title>Мои моды для Sims 4</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
+    {% raw %}
+    <div id="app">
     <header>
         <h1>
-            <img src="./static/header.png" alt="📁" width="60" style="vertical-align: middle; margin-right: 10px;">
+            <img src="/static/header.png" alt="📁" width="60" style="vertical-align: middle; margin-right: 10px;">
             Мои моды для Sims 4
         </h1>
         <canvas id="sparkleCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;"></canvas>
         <div class="header-actions">
             <a href="/tags" class="header-tag-btn">🏷️ Управление тегами</a>
             <div class="header-form-wrapper">
-                <form action="/add" method="POST" class="header-form">
-                    <input type="url" name="mod_url" 
+                <form @submit.prevent="addMod" class="header-form">
+                    <input type="url" v-model="newModUrl" 
                         placeholder="https://sims-market.ru/mod/..." required>
-                    <button type="submit">+ Добавить мод</button>
+                    <button type="submit" :disabled="loading">+ Добавить мод</button>
                 </form>
             </div>
         </div>
     </header>
 
     <!-- Отображение активного фильтра -->
-    {% if current_filter_tags %}
-    <div class="filter-indicator">
-        <span class="filter-text">Фильтр: 
-            {% for tag_id, tag_name in current_filter_names %}
-                {{ tag_name }}{% if not loop.last %}, {% endif %}
-            {% endfor %}
+    <div class="filter-indicator" v-if="activeFilters.length > 0">
+        <span class="filter-text">Фильтр:
+            <span v-for="(tag, index) in activeFilterTags" :key="tag.id">
+                {{ tag.name }}<span v-if="index < activeFilterTags.length - 1">, </span>
+            </span>
         </span>
-        <a href="/" class="filter-clear-btn">×</a>
+        <button @click="clearFilters" class="filter-clear-btn">×</button>
     </div>
-    {% endif %}
 
     <!-- Flash-сообщения вверху страницы -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-container">
-                {% for category, message in messages %}
-                    <div class="flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+    <div class="flash-container" v-if="flashMessage">
+        <div :class="'flash-' + flashType">{{ flashMessage }}</div>
+    </div>
 
     <main class="cards-container">
-        {% for mod in mods %}
-        <div class="card" data-mod-id="{{ mod[0] }}">
+        <div class="card" v-for="mod in filteredMods" :key="mod.id">
             <!-- Кнопка "три точки" в правом верхнем углу -->
             <div class="card-actions">
                 <div class="dropdown">
-                    <button class="dropdown-btn">⋮</button>
-                    <div class="dropdown-content">
+                    <button class="dropdown-btn" @click.stop="toggleDropdown(mod.id)">⋮</button>
+                    <div class="dropdown-content" :class="{ show: activeDropdown === mod.id }">
                         <!-- Открыть на Sims-Market -->
-                        <a href="{{ mod[3] | escape }}" target="_blank" class="dropdown-item">
+                        <a :href="mod.url" target="_blank" class="dropdown-item">
                             🌐 Открыть на Sims-Market
                         </a>
                         <!-- Ссылка для скачивания -->
                         <a href="#" class="dropdown-item" 
-                           onclick="downloadMod('{{ mod[6] | escape }}'); return false;">
+                           @click.prevent="downloadMod(mod.download_url)">
                             ⬇️ Скачать ZIP
                         </a>
                         <!-- Кнопка удаления в стиле dropdown-item -->
                         <a href="#" class="dropdown-item delete-btn" 
-                           onclick="deleteMod({{ mod[0] }}, '{{ mod[1] | escape }}'); return false;">
+                           @click.prevent="deleteMod(mod)">
                             🗑 Удалить мод
                         </a>
                     </div>
                 </div>
             </div>
             
-            <img src="{{ mod[2] | escape }}" alt="{{ mod[1] | escape }}" 
+            <img :src="mod.image" :alt="mod.title" 
                  onerror="this.src='https://via.placeholder.com/250x150?text=No+Image'">
             
             <div class="card-content">
                 <!-- Верхняя часть (заголовок) -->
                 <div class="content-top">
-                    <h2>{{ mod[1] | escape }}</h2>                       
+                    <h2>{{ mod.title }}</h2>                       
                 </div>
                 
                 <!-- Нижняя часть (ссылки и кнопки) -->
                 <div class="content-bottom">
                     <!-- Теги и плюсик в одной строке -->
                     <div class="assigned-tags">
-                        {% set mod_tags = tags_for_mod[mod[0]] %}
-                        {% if mod_tags %}
-                            {% for tag in mod_tags %}
-                            <div class="assigned-tag-container">
-                                <span class="assigned-tag" onclick="filterByTag({{ tag[0] }})">
-                                    {{ tag[1] }}
-                                    <span class="assigned-tag-delete">×</span>
-                                </span>
-                            </div>
-                            {% endfor %}
-                        {% endif %}
+                        <div class="assigned-tag-container" v-for="tag in mod.tags" :key="tag.id">
+                            <span class="assigned-tag" @click="toggleFilter(tag.id)" :class="{ 'active-filter-tag': activeFilters.includes(tag.id) }">
+                                {{ tag.name }}
+                                <span class="assigned-tag-delete" @click.stop="removeTagFromMod(mod, tag)">×</span>
+                            </span>
+                        </div>
                         
                         <!-- Плюсик в стиле тега -->
-                        <button class="tag-plus-btn">+</button>
-                        <div class="tag-dropdown">
-                            {% for tag in all_tags %}
+                        <button class="tag-plus-btn" @click.stop="toggleTagDropdown(mod.id)">+</button>
+                        <div class="tag-dropdown" :class="{ show: activeTagDropdown === mod.id }">
                             <button type="button" class="tag-item" 
-                                    onclick="addTagToMod(event, {{ mod[0] }}, {{ tag[0] }})">
-                                {{ tag[1] }}
+                                    v-for="tag in availableTags(mod)" :key="tag.id"
+                                    @click="addTagToMod(mod, tag)">
+                                {{ tag.name }}
                             </button>
-                            {% endfor %}
                         </div>
                     </div>                    
                 </div>
             </div>
         </div>
-        {% else %}
-        <p class="empty">
-            {% if current_filter_tags %}
+        
+        <p class="empty" v-if="filteredMods.length === 0 && mods.length > 0">
                 Нет модов с выбранными тегами. 
-                <a href="/">Показать все</a>
-            {% else %}
-                Нет добавленных модов. Добавьте первый!
-            {% endif %}
+                <a href="#" @click.prevent="clearFilters">Показать все</a>
         </p>
-        {% endfor %}
+        <p class="empty" v-if="mods.length === 0 && !loading">
+                Нет добавленных модов. Добавьте первый!
+        </p>
     </main>
+    </div>
+    {% endraw %}
 
     <script>
+    const { createApp } = Vue;
 
-        // === Единый обработчик для всех выпадающих списков ===
-    document.addEventListener('DOMContentLoaded', function() {
-        // Обработчик клика по кнопке
-        document.addEventListener('click', function(e) {
-            // Обработка клика по .dropdown-btn
-            if (e.target.closest('.dropdown-btn')) {
-                e.stopPropagation();
-                const button = e.target.closest('.dropdown-btn');
-                const dropdown = button.nextElementSibling;
-                closeAllDropdowns();
-                dropdown.classList.toggle('show');
+    createApp({
+        data() {
+            return {
+                mods: [],
+                allTags: [],
+                newModUrl: '',
+                activeFilters: [],
+                activeDropdown: null,
+                activeTagDropdown: null,
+                flashMessage: '',
+                flashType: 'success',
+                loading: false
             }
-            // Обработка клика по .tag-plus-btn
-            else if (e.target.closest('.tag-plus-btn')) {
-                e.stopPropagation();
-                const button = e.target.closest('.tag-plus-btn');
-                const dropdown = button.nextElementSibling;
-                closeAllDropdowns();
-                dropdown.classList.toggle('show');
-            }
-        });
-
-        // Обработчик клика вне выпадающих списков
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown-btn') && !e.target.closest('.dropdown-content') &&
-                !e.target.closest('.tag-plus-btn') && !e.target.closest('.tag-dropdown')) {
-                closeAllDropdowns();
-            }
-        });
-    });
-
-    // Функция для закрытия всех выпадающих списков
-    function closeAllDropdowns() {
-        document.querySelectorAll('.dropdown-content, .tag-dropdown').forEach(dropdown => {
-            dropdown.classList.remove('show');
-        });
-    }
-
-    function deleteMod(modId, modTitle) {
-        if (confirm('Удалить мод "' + modTitle + '"?')) {
-            // Создаем форму для отправки POST-запроса
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/delete/' + modId;
-            document.body.appendChild(form);
-            form.submit();
-        }
-    };
-
-    function downloadMod(downloadLink) {
-        if (!downloadLink || downloadLink.trim() === '') {
-            alert('Ссылка для скачивания отсутствует');
-            return;
-        }
-        window.open(downloadLink, '_blank');
-    }
-
-    function filterByTag(tagId) {
-        // Получаем текущие активные фильтры из URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentFilters = urlParams.getAll('tag_ids');
-        
-        // Проверяем, есть ли тег в текущих фильтрах
-        if (currentFilters.includes(tagId.toString())) {
-            // Если есть, удаляем его
-            const newFilters = currentFilters.filter(id => id !== tagId.toString());
-            redirectToFilter(newFilters);
-        } else {
-            // Если нет, добавляем к текущим фильтрам
-            if (!currentFilters.includes(tagId.toString())) {
-                currentFilters.push(tagId.toString());
-            }
-            redirectToFilter(currentFilters);
-        }
-    }
-
-    function redirectToFilter(tagIds) {
-        if (tagIds.length === 0) {
-            window.location.href = '/';
-        } else {
-            const params = new URLSearchParams();
-            tagIds.forEach(tagId => params.append('tag_ids', tagId));
-            window.location.href = `/filter_by_tags?${params.toString()}`;
-        }
-    }
-    
-    function removeTagFromMod(event, modId, tagId) {
-        event.stopPropagation();
-        
-        if (confirm('Удалить тег из этого мода?')) {
-            const deleteButton = event.target;
-            const originalText = deleteButton.textContent;
-            deleteButton.textContent = '×';
-            deleteButton.disabled = true;
-            
-            fetch(`/mod/${modId}/remove_tag/${tagId}`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
+        },
+        computed: {
+            filteredMods() {
+                if (this.activeFilters.length === 0) {
+                    return this.mods;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Находим и удаляем элемент тега
-                    const tagElement = event.target.closest('.assigned-tag-container');
-                    tagElement.remove();
-                    
-                    showFlashMessage('Тег удален из мода', 'success');
+                return this.mods.filter(mod => {
+                    const modTagIds = mod.tags.map(t => t.id);
+                    return this.activeFilters.every(filterId => modTagIds.includes(filterId));
+                });
+            },
+            activeFilterTags() {
+                return this.allTags.filter(tag => this.activeFilters.includes(tag.id));
+            }
+        },
+        methods: {
+            async fetchData() {
+                try {
+                    const response = await axios.get('/api/data');
+                    this.mods = response.data.mods;
+                    this.allTags = response.data.tags;
+                } catch (error) {
+                    this.showFlash('Ошибка загрузки данных', 'danger');
+                }
+            },
+            async addMod() {
+                if (!this.newModUrl) return;
+                this.loading = true;
+                try {
+                    const response = await axios.post('/add', { mod_url: this.newModUrl });
+                    if (response.data.success) {
+                        this.showFlash(response.data.message, 'success');
+                        this.newModUrl = '';
+                        await this.fetchData();
+                    } else {
+                        this.showFlash(response.data.message, 'danger');
+                    }
+                } catch (error) {
+                    this.showFlash('Ошибка при добавлении мода', 'danger');
+                } finally {
+                    this.loading = false;
+                }
+            },
+            async deleteMod(mod) {
+                if (!confirm(`Удалить мод "${mod.title}"?`)) return;
+                try {
+                    const response = await axios.post(`/delete/${mod.id}`);
+                    if (response.data.success) {
+                        this.showFlash(response.data.message, 'success');
+                        this.mods = this.mods.filter(m => m.id !== mod.id);
+                    } else {
+                        this.showFlash(response.data.message, 'danger');
+                    }
+                } catch (error) {
+                    this.showFlash('Ошибка при удалении', 'danger');
+                }
+            },
+            async addTagToMod(mod, tag) {
+                try {
+                    const response = await axios.post(`/mod/${mod.id}/add_tag/${tag.id}`);
+                    if (response.data.success) {
+                        mod.tags.push({ id: tag.id, name: tag.name });
+                        this.showFlash(response.data.message, 'success');
+                        this.activeTagDropdown = null;
+                    }
+                } catch (error) {
+                    this.showFlash('Ошибка при добавлении тега', 'danger');
+                }
+            },
+            async removeTagFromMod(mod, tag) {
+                if (!confirm('Удалить тег из этого мода?')) return;
+                try {
+                    const response = await axios.post(`/mod/${mod.id}/remove_tag/${tag.id}`);
+                    if (response.data.success) {
+                        mod.tags = mod.tags.filter(t => t.id !== tag.id);
+                        this.showFlash(response.data.message, 'success');
+                    }
+                } catch (error) {
+                    this.showFlash('Ошибка при удалении тега', 'danger');
+                }
+            },
+            toggleFilter(tagId) {
+                if (this.activeFilters.includes(tagId)) {
+                    this.activeFilters = this.activeFilters.filter(id => id !== tagId);
                 } else {
-                    showFlashMessage('Ошибка при удалении тега', 'danger');
+                    this.activeFilters.push(tagId);
                 }
-            })
-            .catch(error => {
-                showFlashMessage('Ошибка при удалении тега', 'danger');
-            })
-            .finally(() => {
-                deleteButton.textContent = originalText;
-                deleteButton.disabled = false;
-            });
-        }
-    }
-
-    function addTagToMod(event, modId, tagId) {
-        event.preventDefault();
-        
-        const button = event.target;
-        const originalText = button.textContent;
-        button.textContent = '...';
-        button.disabled = true;
-        
-        // Отправляем AJAX-запрос
-        fetch(`/mod/${modId}/add_tag/${tagId}`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Успешно добавлено - обновляем карточку
-                const tagContainer = document.querySelector(`.card[data-mod-id="${modId}"] .assigned-tags`);
-                
-                // Создаем новый элемент тега
-                const tagElement = document.createElement('div');
-                tagElement.className = 'assigned-tag-container';
-                tagElement.innerHTML = `
-                    <span class="assigned-tag" onclick="filterByTag(${data.tag_id})">
-                        ${data.tag_name}
-                        <span class="assigned-tag-delete" onclick="removeTagFromMod(event, ${modId}, ${data.tag_id})">×</span>
-                    </span>
-                `;
-                
-                // Находим плюсик и вставляем тег перед ним
-                const plusButton = tagContainer.querySelector('.tag-plus-btn');
-                tagContainer.insertBefore(tagElement, plusButton);
-                
-                // Показываем сообщение
-                showFlashMessage(data.message, 'success');
-                
-                // Закрываем выпадающий список
-                const dropdown = plusButton.closest('.card').querySelector('.tag-dropdown');
-                dropdown.classList.remove('show');
-            } else {
-                showFlashMessage(data.message, 'danger');
-            }
-        })
-        .catch(error => {
-            showFlashMessage('Ошибка при добавлении тега', 'danger');
-        })
-        .finally(() => {
-            button.textContent = originalText;
-            button.disabled = false;
-        });
-    }
-
-    function showFlashMessage(message, type) {
-        // Создаем элемент сообщения
-        const flashDiv = document.createElement('div');
-        flashDiv.className = `flash-${type}`;
-        flashDiv.textContent = message;
-        flashDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 6px;
-            color: white;
-            font-weight: 500;
-            z-index: 10000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
-        
-        if (type === 'success') {
-            flashDiv.style.background = '#28a745';
-        } else {
-            flashDiv.style.background = '#dc3545';
-        }
-        
-        document.body.appendChild(flashDiv);
-        
-        // Удаляем через 3 секунды
-        setTimeout(() => {
-            flashDiv.remove();
-        }, 3000);
-    }
-
-    // Обновляем функцию toggleTagDropdown
-    function toggleTagDropdown(button) {
-        const dropdown = button.nextElementSibling;
-        dropdown.classList.toggle('show');
-        
-        // Закрыть другие выпадающие списки
-        document.querySelectorAll('.tag-dropdown').forEach(d => {
-            if (d !== dropdown && d.classList.contains('show')) {
-                d.classList.remove('show');
-            }
-        });
-    }
-
-    // Обновляем функцию для плюсика
-    function updatePlusButton(modId, tagId) {
-        const plusButton = event.target.closest('.tag-plus-btn');
-        addTagToMod(event, modId, tagId);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
+            },
+            clearFilters() {
+                this.activeFilters = [];
+            },
+            toggleDropdown(modId) {
+                this.activeDropdown = this.activeDropdown === modId ? null : modId;
+                this.activeTagDropdown = null;
+            },
+            toggleTagDropdown(modId) {
+                this.activeTagDropdown = this.activeTagDropdown === modId ? null : modId;
+                this.activeDropdown = null;
+            },
+            availableTags(mod) {
+                const modTagIds = mod.tags.map(t => t.id);
+                return this.allTags.filter(t => !modTagIds.includes(t.id));
+            },
+            downloadMod(url) {
+                if (!url) {
+                    alert('Ссылка для скачивания отсутствует');
+                    return;
+                }
+                window.open(url, '_blank');
+            },
+            showFlash(message, type) {
+                this.flashMessage = message;
+                this.flashType = type;
+                setTimeout(() => {
+                    this.flashMessage = '';
+                }, 3000);
+            },
+            initSparkles() {
         const canvas = document.getElementById('sparkleCanvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -410,7 +301,21 @@
         }
 
         animate();
-    });
+            }
+        },
+        mounted() {
+            this.fetchData();
+            this.initSparkles();
+            
+            // Close dropdowns on click outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.dropdown') && !e.target.closest('.tag-dropdown') && !e.target.closest('.tag-plus-btn')) {
+                    this.activeDropdown = null;
+                    this.activeTagDropdown = null;
+                }
+            });
+        }
+    }).mount('#app');
     </script>
 </body>
 </html>

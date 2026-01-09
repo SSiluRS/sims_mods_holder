@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   app:
     build: .
     ports:
-      - "7066:5000"
+      - "7066:7066"
     env_file:
-      - .env  # Подключаем .env файл
-    environment:
-      - FLASK_ENV=production
+      - .env
+    volumes:
+      - ./sims_mods.db:/app/sims_mods.db
     restart: unless-stopped
