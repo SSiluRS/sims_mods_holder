@@ -30,11 +30,9 @@ onMounted(async () => {
   try {
     const response = await axios.get('/api/version');
     version.value = response.data.version;
-    if (version.value === 'latest') {
-      environment.value = 'development';
-    } else {
-      environment.value = response.data.environment !== 'production' ? response.data.environment : '';
-    }
+    // Доверяем бэкенду: если он говорит production, скрываем плашку.
+    // Если говорит что-то другое (development, testing) - показываем.
+    environment.value = response.data.environment !== 'production' ? response.data.environment : '';
   } catch (e) {
     version.value = 'unknown';
   }
