@@ -9,7 +9,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Новая джоба: ожидание успешной сборки в main перед релизом тега
   wait-for-main:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
@@ -22,8 +21,26 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 20
 
+  create-release:
+    needs: [wait-for-main]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
   build-backend:
-    # Если это тег, ждем успешного завершения wait-for-main
     needs: [wait-for-main]
     if: |
       always() && 
