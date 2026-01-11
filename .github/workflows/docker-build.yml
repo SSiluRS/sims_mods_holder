@@ -9,7 +9,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Новая джоба: ожидание успешной сборки в main перед релизом тега
+  wait-for-main:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Main Build to succeed
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-regexp: 'build-(backend|frontend)'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 20
+
   build-backend:
+    # Если это тег, ждем успешного завершения wait-for-main
+    needs: [wait-for-main]
+    if: |
+      always() && 
+      (needs.wait-for-main.result == 'success' || !startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -50,6 +68,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   build-frontend:
+    needs: [wait-for-main]
+    if: |
+      always() && 
+      (needs.wait-for-main.result == 'success' || !startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
