@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import api from '../utils/api';
 import { initSparkles } from '../utils/sparkles';
 
 export default {
@@ -81,7 +81,7 @@ export default {
     methods: {
         async fetchTags() {
             try {
-                const response = await axios.get('/api/tags');
+                const response = await api.get('/api/tags');
                 this.tags = response.data.tags.map(tag => ({
                     ...tag,
                     editName: tag.name 
@@ -96,7 +96,7 @@ export default {
                 return;
             }
             try {
-                const response = await axios.post('/api/tags', { tag_name: this.newTagName });
+                const response = await api.post('/api/tags', { tag_name: this.newTagName });
                 if (response.data.success) {
                     this.showFlash(response.data.message, 'success');
                     this.newTagName = '';
@@ -114,7 +114,7 @@ export default {
                 return;
             }
             try {
-                const response = await axios.put(`/api/tags/${tag.id}`, { tag_name: tag.editName });
+                const response = await api.put(`/api/tags/${tag.id}`, { tag_name: tag.editName });
                 if (response.data.success) {
                     tag.name = tag.editName;
                     this.showFlash(response.data.message, 'success');
@@ -128,7 +128,7 @@ export default {
         async deleteTag(tag) {
             if (!confirm(`Удалить тег "${tag.name}"? Все связанные моды потеряют этот тег.`)) return;
             try {
-                const response = await axios.delete(`/api/tags/${tag.id}`);
+                const response = await api.delete(`/api/tags/${tag.id}`);
                 if (response.data.success) {
                     this.tags = this.tags.filter(t => t.id !== tag.id);
                     this.showFlash(response.data.message, 'success');

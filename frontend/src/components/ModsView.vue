@@ -104,7 +104,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import api from '../utils/api';
 import { initSparkles } from '../utils/sparkles';
 
 export default {
@@ -138,7 +138,7 @@ export default {
     methods: {
         async fetchData() {
             try {
-                const response = await axios.get('/api/data');
+                const response = await api.get('/api/data');
                 this.mods = response.data.mods;
                 this.allTags = response.data.tags;
             } catch (error) {
@@ -149,7 +149,7 @@ export default {
             if (!this.newModUrl) return;
             this.loading = true;
             try {
-                const response = await axios.post('/api/mods', { mod_url: this.newModUrl });
+                const response = await api.post('/api/mods', { mod_url: this.newModUrl });
                 if (response.data.success) {
                     this.showFlash(response.data.message, 'success');
                     this.newModUrl = '';
@@ -166,7 +166,7 @@ export default {
         async deleteMod(mod) {
             if (!confirm(`Удалить мод "${mod.title}"?`)) return;
             try {
-                const response = await axios.delete(`/api/mods/${mod.id}`);
+                const response = await api.delete(`/api/mods/${mod.id}`);
                 if (response.data.success) {
                     this.showFlash(response.data.message, 'success');
                     this.mods = this.mods.filter(m => m.id !== mod.id);
@@ -179,7 +179,7 @@ export default {
         },
         async addTagToMod(mod, tag) {
             try {
-                const response = await axios.post(`/api/mods/${mod.id}/tags/${tag.id}`);
+                const response = await api.post(`/api/mods/${mod.id}/tags/${tag.id}`);
                 if (response.data.success) {
                     mod.tags.push({ id: tag.id, name: tag.name });
                     this.showFlash(response.data.message, 'success');
@@ -192,7 +192,7 @@ export default {
         async removeTagFromMod(mod, tag) {
             if (!confirm('Удалить тег из этого мода?')) return;
             try {
-                const response = await axios.delete(`/api/mods/${mod.id}/tags/${tag.id}`);
+                const response = await api.delete(`/api/mods/${mod.id}/tags/${tag.id}`);
                 if (response.data.success) {
                     mod.tags = mod.tags.filter(t => t.id !== tag.id);
                     this.showFlash(response.data.message, 'success');
