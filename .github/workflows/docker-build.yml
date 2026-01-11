@@ -10,7 +10,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  wait-for-main:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Main Build to succeed
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-regexp: 'build-(backend|frontend)'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 20
+
+  create-release:
+    needs: [wait-for-main]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
   build-backend:
+    needs: [wait-for-main]
+    if: |
+      always() && 
+      (needs.wait-for-main.result == 'success' || !startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,6 +89,10 @@ jobs:
             APP_VERSION=${{ steps.meta.outputs.version }}
 
   build-frontend:
+    needs: [wait-for-main]
+    if: |
+      always() && 
+      (needs.wait-for-main.result == 'success' || !startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
