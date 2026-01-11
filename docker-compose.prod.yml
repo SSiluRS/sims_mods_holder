@@ -1,0 +1,18 @@
+services:
+  app:
+    image: ssilurs/sims-mods-backend:latest
+    ports:
+      - "7066:7066"
+    env_file:
+      - .env
+    volumes:
+      - ./sims_mods.db:/app/sims_mods.db
+    restart: unless-stopped
+
+  frontend:
+    image: ssilurs/sims-mods-frontend:latest
+    ports:
+      - "8081:80"
+    depends_on:
+      - app
+    restart: unless-stopped
