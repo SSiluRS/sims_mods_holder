@@ -5,8 +5,6 @@ services:
       - "7066:7066"
     env_file:
       - .env
-    volumes:
-      - ./sims_mods.db:/app/sims_mods.db
     restart: unless-stopped
 
   frontend:
