@@ -54,6 +54,7 @@ sims_mods.db
 *.swp
 *.swo
 *~
+.gemini
 
 # OS Files
 .DS_Store
