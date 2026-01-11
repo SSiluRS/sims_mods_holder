@@ -3,8 +3,8 @@ param(
     [string]$Version
 )
 
-# Validate version format (X.Y.Z or X.Y.Z.W)
-if ($Version -notmatch "^\d+\.\d+\.\d+(\.\d+)?$") {
+# Проверка формата версии (минимум две группы цифр через точку, например 1.0 или 1.0.0.1)
+if ($Version -notmatch '^\d+(\.\d+)+$') {
     Write-Error "Error: Version must be in format X.Y.Z or X.Y.Z.W (e.g. 1.0.0 or 1.0.0.1)"
     exit 1
 }
