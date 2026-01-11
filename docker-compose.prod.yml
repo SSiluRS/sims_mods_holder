@@ -1,6 +1,6 @@
 services:
   app:
-    image: ssilurs/sims-mods-backend:latest
+    image: ssilurs/sims-mods-backend:${TAG:-latest}
     ports:
       - "7066:7066"
     env_file:
@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ssilurs/sims-mods-frontend:latest
+    image: ssilurs/sims-mods-frontend:${TAG:-latest}
     ports:
       - "8081:80"
     depends_on:
