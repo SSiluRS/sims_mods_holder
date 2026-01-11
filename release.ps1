@@ -3,9 +3,9 @@ param(
     [string]$Version
 )
 
-# Validate version format (X.Y.Z)
-if ($Version -notmatch "^\d+\.\d+\.\d+$") {
-    Write-Error "Error: Version must be in format X.Y.Z (e.g. 1.0.0)"
+# Validate version format (X.Y.Z or X.Y.Z.W)
+if ($Version -notmatch "^\d+\.\d+\.\d+(\.\d+)?$") {
+    Write-Error "Error: Version must be in format X.Y.Z or X.Y.Z.W (e.g. 1.0.0 or 1.0.0.1)"
     exit 1
 }
 
