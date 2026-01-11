@@ -1,6 +1,17 @@
 # Sims Mods Holder
 
+[![Docker Image Version (Backend)](https://img.shields.io/docker/v/ssilurs/sims-mods-backend?label=Backend&logo=docker)](https://hub.docker.com/r/ssilurs/sims-mods-backend)
+[![Docker Image Version (Frontend)](https://img.shields.io/docker/v/ssilurs/sims-mods-frontend?label=Frontend&logo=docker)](https://hub.docker.com/r/ssilurs/sims-mods-frontend)
+
 Веб-приложение для управления и каталогизации модов для The Sims. Позволяет добавлять ссылки на моды, автоматически парсить информацию (заголовок, картинка) и тегировать их.
+
+## 🐳 Docker Images
+
+Готовые образы доступны на Docker Hub:
+```bash
+docker pull ssilurs/sims-mods-backend:latest
+docker pull ssilurs/sims-mods-frontend:latest
+```
 
 ## 🛠 Технологический стек
 

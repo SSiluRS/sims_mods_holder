@@ -27,7 +27,7 @@ if ($Confirmation -ne 'y') {
 
 # Create tag
 Write-Host "Creating tag $Tag..."
-git tag $Tag
+git tag -a $Tag -m "Release $Version"
 
 if ($LASTEXITCODE -eq 0) {
     # Push tag
