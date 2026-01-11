@@ -3,42 +3,43 @@ param(
     [string]$Version
 )
 
-# Проверка формата версии (X.Y.Z)
-if ($Version -notmatch '^\d+\.\d+\.\d+$') {
-    Write-Error "Ошибка: Версия должна быть в формате X.Y.Z (например, 1.0.0)"
+# Validate version format (X.Y.Z)
+if ($Version -notmatch "^\d+\.\d+\.\d+$") {
+    Write-Error "Error: Version must be in format X.Y.Z (e.g. 1.0.0)"
     exit 1
 }
 
 $Tag = "v$Version"
 
-# Проверка, существует ли тег локально
-if (git tag -l $Tag) {
-    Write-Error "Ошибка: Тег $Tag уже существует локально."
+# Check if tag exists locally
+$existingTag = git tag -l $Tag
+if ($existingTag) {
+    Write-Error "Error: Tag $Tag already exists locally."
     exit 1
 }
 
-# Подтверждение
-$Confirmation = Read-Host "Вы собираетесь создать тег $Tag и отправить его в origin. Продолжить? (y/n)"
+# Confirmation
+$Confirmation = Read-Host "About to create tag $Tag and push to origin. Continue? (y/n)"
 if ($Confirmation -ne 'y') {
-    Write-Host "Отмена."
+    Write-Host "Cancelled."
     exit 0
 }
 
-# Создание тега
-Write-Host "Создание тега $Tag..."
+# Create tag
+Write-Host "Creating tag $Tag..."
 git tag $Tag
 
 if ($LASTEXITCODE -eq 0) {
-    # Отправка тега
-    Write-Host "Отправка тега $Tag в репозиторий..."
+    # Push tag
+    Write-Host "Pushing tag $Tag to remote..."
     git push origin $Tag
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ Успешно! GitHub Actions должен скоро начать сборку для $Tag."
-        Write-Host "Проверить статус: https://github.com/<ваш_пользователь>/sims_mods_holder/actions"
+        Write-Host "SUCCESS! GitHub Actions should start building for $Tag soon."
+        Write-Host "Check status: https://github.com/SSiluRS/sims_mods_holder/actions"
     } else {
-        Write-Error "Ошибка при отправке тега."
+        Write-Error "Error pushing tag."
     }
 } else {
-    Write-Error "Ошибка при создании тега."
+    Write-Error "Error creating tag."
 }
